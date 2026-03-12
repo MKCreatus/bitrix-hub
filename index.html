@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brixy Hub</title>
+  <style>
+    body {
+      background-color: #1a1a24;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .container {
+      width: 100%;
+      max-width: 700px;
+      background-color: #262635;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+    h1, h2, h3 { text-align: center; color: #a67cff; }
+    .tela { display: none; }
+    .tela.ativa { display: block; }
+    .menu-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .btn-menu, .btn-acao, .btn-secundario {
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+      font-size: 1rem;
+    }
+    .btn-menu {
+      background-color: #3d3d5c;
+      border: 2px solid #5a5a8c;
+      padding: 20px;
+      font-weight: bold;
+    }
+    .btn-menu:hover { background-color: #5a5a8c; }
+    .btn-acao {
+      width: 100%;
+      padding: 12px;
+      background-color: #8a2be2;
+      border: none;
+    }
+    .btn-acao:hover { background-color: #7a1be2; }
+    .btn-secundario {
+      width: 100%;
+      padding: 12px;
+      background-color: #3d3d5c;
+      border: 1px solid #5a5a8c;
+    }
+    .btn-secundario:hover { background-color: #4d4d72; }
+    .btn-voltar {
+      background: none;
+      color: #a0a0a0;
+      border: none;
+      text-decoration: underline;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    label { display: block; margin: 15px 0 5px; font-size: 0.9rem; }
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background-color: #1a1a24;
+      color: #fff;
+      box-sizing: border-box;
+      margin-bottom: 15px;
+    }
+    .resultado {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #1a1a24;
+      border-radius: 6px;
+      min-height: 50px;
+      border: 1px solid #444;
+      white-space: pre-wrap;
+      font-family: monospace;
+      overflow-wrap: anywhere;
+    }
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .status {
+      margin-top: 10px;
+      font-size: 0.95rem;
+      color: #cfcfcf;
+      text-align: center;
+    }
+    .notice {
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      background-color: #1f1f2d;
+      border: 1px solid #47476b;
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+    #chatBox {
+      height: 320px;
+      overflow-y: auto;
+      background-color: #1a1a24;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .mensagem { padding: 10px; border-radius: 6px; max-width: 85%; white-space: pre-wrap; }
+    .msg-usuario { background-color: #8a2be2; align-self: flex-end; }
+    .msg-bot { background-color: #3d3d5c; align-self: flex-start; }
+    .chat-input-area { display: flex; gap: 10px; }
+    .chat-input-area input { margin-bottom: 0; }
+    .chat-input-area button { width: auto; padding: 0 20px; }
+    .small {
+      font-size: 0.85rem;
+      color: #bbbbbb;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 700px) {
+      .menu-grid, .row { grid-template-columns: 1fr; }
+      .chat-input-area { flex-direction: column; }
+      .chat-input-area button { width: 100%; padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div id="tela-menu" class="tela ativa">
+    <h1>Brixy Hub</h1>
+    <p style="text-align:center;">Selecione a ferramenta desejada:</p>
+    <div class="menu-grid">
+      <button class="btn-menu" onclick="abrirTela('tela-cnpj')">Consulta CNPJ</button>
+      <button class="btn-menu" onclick="abrirTela('tela-cpf')">Validação CPF</button>
+      <button class="btn-menu" onclick="abrirTela('tela-cep')">Consulta CEP</button>
+      <button class="btn-menu" onclick="abrirTela('tela-chat')">🤖 Brixy Bot</button>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn-secundario" onclick="abrirTela('tela-config')">Configurar Webhooks</button>
+    </div>
+
+    <div class="notice">
+      Antes de usar, configure as URLs dos webhooks de produção do n8n na tela <strong>Configurar Webhooks</strong>.
+      Depois ative os workflows no n8n.
+    </div>
+    <div id="statusConfig" class="status"></div>
+  </div>
+
+  <div id="tela-config" class="tela">
+    <button class="btn-voltar" onclick="abrirTela('tela-menu')">← Voltar ao Menu</button>
+    <h2>Configurar Webhooks</h2>
+
+    <label>Webhook CNPJ</label>
+    <input type="text" id="cfgCNPJ" placeholder="https://SEU-N8N/webhook/consulta-cnpj">
+
+    <label>Webhook CPF</label>
+    <input type="text" id="cfgCPF" placeholder="https://SEU-N8N/webhook/validacao-cpf">
+
+    <label>Webhook CEP</label>
+    <input type="text" id="cfgCEP" placeholder="https://SEU-N8N/webhook/consulta-cep">
+
+    <label>Webhook Brixy Bot</label>
+    <input type="text" id="cfgCHAT" placeholder="https://SEU-N8N/webhook/brixy-bot">
+
+    <div class="row">
+      <button class="btn-acao" onclick="salvarConfig()">Salvar configuração</button>
+      <button class="btn-secundario" onclick="limparConfig()">Limpar configuração</button>
+    </div>
+
+    <div class="notice small">
+      Dica: use as <strong>Production URLs</strong>, não as Test URLs.
+    </div>
+    <div id="resultadoConfig" class="resultado">As configurações ainda não foram salvas.</div>
+  </div>
+
+  <div id="tela-cnpj" class="tela">
+    <button class="btn-voltar" onclick="abrirTela('tela-menu')">← Voltar ao Menu</button>
+    <h2>Consulta CNPJ</h2>
+    <label>Digite o CNPJ:</label>
+    <input type="text" id="inputCNPJ" placeholder="Apenas números...">
+    <button class="btn-acao" onclick="fazerConsulta('CNPJ')">Consultar</button>
+    <div id="resultadoCNPJ" class="resultado">Aguardando consulta...</div>
+  </div>
+
+  <div id="tela-cpf" class="tela">
+    <button class="btn-voltar" onclick="abrirTela('tela-menu')">← Voltar ao Menu</button>
+    <h2>Validação CPF</h2>
+    <label>Digite o CPF:</label>
+    <input type="text" id="inputCPF" placeholder="Apenas números...">
+    <button class="btn-acao" onclick="fazerConsulta('CPF')">Validar</button>
+    <div id="resultadoCPF" class="resultado">Aguardando consulta...</div>
+  </div>
+
+  <div id="tela-cep" class="tela">
+    <button class="btn-voltar" onclick="abrirTela('tela-menu')">← Voltar ao Menu</button>
+    <h2>Consulta CEP</h2>
+    <label>Digite o CEP:</label>
+    <input type="text" id="inputCEP" placeholder="Ex: 01001000">
+    <button class="btn-acao" onclick="fazerConsulta('CEP')">Buscar Endereço</button>
+    <div id="resultadoCEP" class="resultado">Aguardando consulta...</div>
+  </div>
+
+  <div id="tela-chat" class="tela">
+    <button class="btn-voltar" onclick="abrirTela('tela-menu')">← Voltar ao Menu</button>
+    <h2>🤖 Brixy Bot (Bitrix24)</h2>
+    <div id="chatBox">
+      <div class="mensagem msg-bot">Olá! Sou a Brixy. Como posso ajudar você no Bitrix24 hoje?</div>
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="inputChat" placeholder="Ex: liste os cards da etapa X" onkeypress="if(event.key === 'Enter') enviarMensagem()">
+      <button class="btn-acao" onclick="enviarMensagem()">Enviar</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const STORAGE_KEY = 'brixy_webhooks_config';
+
+  function getConfig() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      return { CNPJ: '', CPF: '', CEP: '', CHAT: '' };
+    }
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return { CNPJ: '', CPF: '', CEP: '', CHAT: '' };
+    }
+  }
+
+  function salvarConfig() {
+    const cfg = {
+      CNPJ: document.getElementById('cfgCNPJ').value.trim(),
+      CPF: document.getElementById('cfgCPF').value.trim(),
+      CEP: document.getElementById('cfgCEP').value.trim(),
+      CHAT: document.getElementById('cfgCHAT').value.trim()
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+    document.getElementById('resultadoConfig').innerText = 'Configuração salva com sucesso:\n\n' + JSON.stringify(cfg, null, 2);
+    atualizarStatusConfig();
+  }
+
+  function limparConfig() {
+    localStorage.removeItem(STORAGE_KEY);
+    document.getElementById('cfgCNPJ').value = '';
+    document.getElementById('cfgCPF').value = '';
+    document.getElementById('cfgCEP').value = '';
+    document.getElementById('cfgCHAT').value = '';
+    document.getElementById('resultadoConfig').innerText = 'Configuração removida.';
+    atualizarStatusConfig();
+  }
+
+  function preencherConfigNaTela() {
+    const cfg = getConfig();
+    document.getElementById('cfgCNPJ').value = cfg.CNPJ || '';
+    document.getElementById('cfgCPF').value = cfg.CPF || '';
+    document.getElementById('cfgCEP').value = cfg.CEP || '';
+    document.getElementById('cfgCHAT').value = cfg.CHAT || '';
+    atualizarStatusConfig();
+  }
+
+  function atualizarStatusConfig() {
+    const cfg = getConfig();
+    const preenchidos = ['CNPJ', 'CPF', 'CEP', 'CHAT'].filter(k => !!cfg[k]).length;
+    document.getElementById('statusConfig').innerText =
+      preenchidos === 4
+        ? 'Webhooks configurados.'
+        : `Webhooks configurados: ${preenchidos}/4`;
+  }
+
+  function abrirTela(idTela) {
+    document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+    document.getElementById(idTela).classList.add('ativa');
+  }
+
+  async function fazerConsulta(tipo) {
+    const cfg = getConfig();
+    const url = cfg[tipo];
+    const input = document.getElementById(`input${tipo}`).value.replace(/\D/g, '');
+    const divResultado = document.getElementById(`resultado${tipo}`);
+
+    if (!url) {
+      divResultado.innerText = `Configure primeiro a URL do webhook de ${tipo}.`;
+      abrirTela('tela-config');
+      return;
+    }
+
+    if (!input) {
+      divResultado.innerText = `Por favor, insira um ${tipo} válido.`;
+      return;
+    }
+
+    divResultado.innerText = 'Consultando... Aguarde.';
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ parametro: input })
+      });
+
+      const contentType = response.headers.get('content-type') || '';
+      let dados;
+      if (contentType.includes('application/json')) {
+        dados = await response.json();
+      } else {
+        dados = { status: response.status, resposta: await response.text() };
+      }
+
+      if (!response.ok) {
+        divResultado.innerText = `Erro HTTP ${response.status}\n\n` + JSON.stringify(dados, null, 2);
+        return;
+      }
+
+      divResultado.innerText = JSON.stringify(dados, null, 2);
+
+    } catch (error) {
+      divResultado.innerText = 'Erro na requisição. Verifique:\n1) URL do webhook\n2) workflow ativo\n3) CORS do Webhook no n8n\n4) HTTPS';
+    }
+  }
+
+  async function enviarMensagem() {
+    const cfg = getConfig();
+    const url = cfg.CHAT;
+    const inputChat = document.getElementById('inputChat');
+    const mensagem = inputChat.value.trim();
+    const chatBox = document.getElementById('chatBox');
+
+    if (!url) {
+      chatBox.innerHTML += `<div class="mensagem msg-bot">Configure primeiro a URL do webhook do Brixy Bot.</div>`;
+      abrirTela('tela-config');
+      return;
+    }
+
+    if (!mensagem) return;
+
+    chatBox.innerHTML += `<div class="mensagem msg-usuario">${escapeHtml(mensagem)}</div>`;
+    inputChat.value = '';
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    const loadingId = 'loading-' + Date.now();
+    chatBox.innerHTML += `<div id="${loadingId}" class="mensagem msg-bot">Brixy está pensando...</div>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensagem })
+      });
+
+      const contentType = response.headers.get('content-type') || '';
+      let dados;
+      if (contentType.includes('application/json')) {
+        dados = await response.json();
+      } else {
+        dados = { resposta: await response.text() };
+      }
+
+      const loadingEl = document.getElementById(loadingId);
+      if (loadingEl) loadingEl.remove();
+
+      if (!response.ok) {
+        chatBox.innerHTML += `<div class="mensagem msg-bot">Erro HTTP ${response.status}: ${escapeHtml(JSON.stringify(dados))}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return;
+      }
+
+      const respostaBot = dados.resposta || dados.output || JSON.stringify(dados, null, 2) || 'Desculpe, não entendi.';
+      chatBox.innerHTML += `<div class="mensagem msg-bot">${escapeHtml(respostaBot)}</div>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+    } catch (error) {
+      const loadingEl = document.getElementById(loadingId);
+      if (loadingEl) {
+        loadingEl.innerText = 'Erro ao conectar com a Brixy. Verifique URL, CORS e se o workflow está ativo.';
+      }
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  preencherConfigNaTela();
+</script>
+</body>
+</html>
